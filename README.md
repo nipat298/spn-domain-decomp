@@ -1,1 +1,0 @@
-# spn-domain-decomp
