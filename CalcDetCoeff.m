@@ -1,0 +1,40 @@
+function J=CalcDetCoeff(N,n0,ni)
+for ii=1:2*N
+a=getr(ii,n0,ni);                                                
+R(ii)=(integral(a,0,pi/2));
+end
+%Partial current parameters
+J(1)=-0.5*R(1);
+J(2)=(-3/2)*R(2);
+J(3)=(5/4)*R(1)-(15/4)*R(3);
+J(4)=(21/4)*R(2)-(35/4)*R(4);
+
+if N>3
+    J(5)=-(27/16)*R(1)+(135/8)*R(3)-(315/16)*R(5);
+    J(6)=-(165/16)*R(2)+(385/8)*R(4)-(693/16)*R(6);    
+end
+if N>5
+    J(7)=(65/32*R(1)-(1365/32))*R(3)+(4095/32)*R(5)-(3003/32)*R(7);
+    J(8)=(525/32)*R(2)-(4725/32)*R(4)+(10395/32)*R(6)-(6435/32)*R(8);
+end
+end
+
+function rcoeff=getr(n,n0,ni)
+%function returns a function handle to evaluate the 'n'th moment of the reflection coefficient for
+%given n0 and ni
+rcoeff=@refcffni;
+
+    function Rn=refcffni(v1)
+    vc=asin(n0/ni);
+    temp=ones(size(v1));
+    %Eqn (5) Klose_2006
+    %for defns. of variables chk Klose paper
+    ind=find(abs(v1)<vc);
+    sinv2=(ni/n0)*sin(v1(ind));
+    cosv2=sqrt(1-(sinv2).^2);
+    temp(ind)=0.5*(((ni*cosv2-n0*cos(v1(ind)))./(ni*cosv2+n0*cos(v1(ind)))).^2)+...
+        0.5*(((ni*cos(v1(ind))-n0*cosv2)./(ni*cos(v1(ind))+n0*cosv2)).^2);
+   Rn=(temp).*(((cos(v1)).^n).*sin(v1));
+
+    end
+end
