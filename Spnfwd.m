@@ -2,6 +2,11 @@ function A=Spnfwd(Dimension,N,Cgrad,C,CgradB,CB,P,T,edgeElem,AssemblyFile)
 %%
 % Subroutine to generate the FEM global assembly matrix from the
 % coefficient matrices and the precomputed assemblymatrices.
+
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
 %%
 load(AssemblyFile);
 Element=size(T,1);

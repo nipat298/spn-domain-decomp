@@ -1,5 +1,23 @@
 function S = GetSource(Dimension,N,Cgrad,CgradB,P,T,edgeElem,edgeType,Src)
+%% Obtain the Source vector
+%%%%%%%%%%%%%%% INPUT
+% Dimension - Set 2 or 3 for 2D or 3D resp.
+% N - order of SPn approximation
+% Cgrad, CgradB - elemental coefficient matrices
+% P - Node Coordinate matrix [NofNodes X 2] or [NofNodes X 3]
+% T - Connectivity matrix. [NofElem X 3]
+% edgeElem - [NofEdges X 1] - elements that lie on the domain edge
+% edgeType - 1,2,3 depending on if the edge is side 1 side 2 or side 3 of
+% the element
+% Src - structure variable containing source information for NofSources
 
+%%%%%%%%%%%%%%%%%%% OUTPUT
+% S - [(N+1)/2 * NofNodes X NofSources] vector 
+%% 
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 
 if Src.ID=='I'
     % Internal source

@@ -1,4 +1,9 @@
 function Jmat = GetPartCurr(Dimension,N,CJ,P,T,edges,edgeElem,edgeType,Det)
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 if strcmp(Det.Type,'point')
     % point detector
     if Dimension ==2

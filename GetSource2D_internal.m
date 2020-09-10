@@ -1,5 +1,11 @@
 function Svec=GetSource2D_internal(N,P,T,Src)
-%Source vector for internal isotropic source embedded in the medium
+%% Source vector for internal isotropic source embedded in the medium
+
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 %Updated on 18 february 2020 - now includes missing area multiplier for
 % source element.
 Nodes=size(P,1);

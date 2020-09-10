@@ -25,6 +25,10 @@ function [Cgradphi,Cphi,Cgradbphi,Cbphi,CJ]=SP3Formulation(N,Nelem,mesh,mua,mus,
 %%%%%%%%% REFERENCES %%%%%%%%%%%
 % 1. Fully non-linear Sp3 approximation based FOT - self
 % 2. Klose 2005
+%%%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
 %%
 edgeElem = mesh.edgeElem;
 BElem=size(edgeElem,1);

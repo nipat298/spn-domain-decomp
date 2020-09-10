@@ -1,5 +1,10 @@
 function S=GetSourceX2D(N,P,T,edgeElem,edgeType,Src,B)
 % Created on 9th April 2019
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 Nodes=size(P,1);
 S=[];
 Sx=Src.Loc(:,1); Sy=Src.Loc(:,2);

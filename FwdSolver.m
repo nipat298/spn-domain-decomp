@@ -31,6 +31,11 @@ function [Jd,varargout]=FwdSolver(Dimension,N,SimType,mesh,Src,Det,AssemblyFile,
 % if evalFluence == 0 and probType = 'recon'
 % varargout{1} = FwData
 %%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+
+%%
 % DT - node connectivity list
 % P - coordinates of all nodes
 % e_n - [list of edge elements, type of edge element] % details in function

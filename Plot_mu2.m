@@ -3,6 +3,11 @@ function Plot_mu2(P,T,h,muk,linestyle,cs)
 %P,T - FEM triangulation information
 %muk- reconstructed parameter in elemental basis
 %varargin = muaxf - actual parameter in elemental basis
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 %Limits for the domain
 xmin=min(min(P(:,1)));
 xmax=max(max(P(:,1)));

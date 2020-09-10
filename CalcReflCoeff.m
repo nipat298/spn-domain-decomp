@@ -1,7 +1,19 @@
 function [A,B,C,D,varargout]=CalcReflCoeff(N,n0,ni)
-%%
-% Function to calculate the reflection coefficient dependent quantities as
+%% Function to calculate the reflection coefficient dependent quantities as
 % defined in Klose 2005. 
+%%%%%%%%%%%% INPUT
+% N - order of SPN approximation
+% n0 - refractive index of outside medium / fiber
+% ni - refractive index of the medium
+%%%%%%%%%%%% OUTPUT
+% coefficients A,B,C,D, E, F, G, H, of size [(N+1)/2 X 1] each. 
+% Refer Klose et al for details. 
+
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+
 %%
 for ii=1:2*N
 a=getr(ii,n0,ni);                                                

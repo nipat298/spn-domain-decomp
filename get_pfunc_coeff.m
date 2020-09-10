@@ -1,6 +1,6 @@
 function [bn,varargout] = get_pfunc_coeff(pfunc,deflag,g,varargin)
 % Created on 8th February 2020
-% Obtain Legendre series expansion coefficients for the phase function of
+%% Obtain Legendre series expansion coefficients for the phase function of
 % choice
 %%%%%%%%%%% INPUT 
 % pfunc - type of phase function. set to 0 - Henyey Greenstein, 
@@ -16,6 +16,12 @@ function [bn,varargout] = get_pfunc_coeff(pfunc,deflag,g,varargin)
 %%%%%%%%%%% OUTPUT
 % bn - Legendre series exapnsion coefficients
 % if deflag = 1, varragout{1} = f (the delta Eddington parameter)
+
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 switch(pfunc)
     case 0
         % H-G 

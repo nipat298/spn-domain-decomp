@@ -1,4 +1,20 @@
 function Jd=DirectedDetection(N,nfibre,ni,AOD)
+%% Calculate J -type coefficients for partial current measurement when collection is
+% in a pre-specified direction. 
+%%%%%%%%%%%% INPUT
+% N - order of SPN approximation
+% n0 - refractive index of outside medium / fiber
+% ni - refractive index of the medium
+% AOD - angle of detection
+%%%%%%%%%%%% OUTPUT
+% J - [(N+1) X 1] vector containing J-type coefficients. 
+% Refer Klose et al for details. 
+
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 AOD=AOD*pi/180;
 vc=asin(nfibre/ni); %Critical angle of incidence from inside the medium
 v1=asin((nfibre/ni)*sin(AOD));

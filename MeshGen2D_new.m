@@ -23,7 +23,11 @@ function [mesh,SrcData,Det,varargout]=MeshGen2D_new(saveFlag,Domain,h,SrcData,De
 % Det - structure containing detector information
 % if saveFlag = 1, varagout{1} contains name of the meshing file that is
 % stored
-
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 %% Generating mesh data
 xmin=Domain(1); xmax=Domain(2) ;ymin=Domain(3); ymax=Domain(4); % Defining the boundaries for the 2-D Phantom (cms)
 mesh.hx=h(1); mesh.hy=h(2); % mesh spacing

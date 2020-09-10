@@ -9,6 +9,12 @@ function fname=Assemble2D_new(mesh)
 % 2. Omprakash Master's thesis
 % 3. Coupled complex adjoint sensitivity, Fedele 2003
 %%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+
+
+%%
 % The Nodal basis is chosen as a+bx+cy;
 P = mesh.nodes;
 T=[mesh.tri(:,1),mesh.tri(:,2),mesh.tri(:,3)];

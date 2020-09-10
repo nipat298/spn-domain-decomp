@@ -13,7 +13,10 @@ function [mesh,Md,varargout]=Datagen(simulation,SettingsFile,func,snr,fcs_flag,n
 %%%%%%%%%%% OUTPUT %%%%%%%%%%%%%%%%%
 % mesh - mesh structure as well as  optical properties
 % Md - exiting partial current measurements with snr as specified
-
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
 
 %%
 run(SettingsFile) %Contains the Problem setting

@@ -9,7 +9,7 @@ function [mesh,Jd,Fluence,varargout]=Datagen_validation(simulation,SettingsFile,
 % snr (dB)- desired signal to noise ratio of measurements
 % fcs_flag - first collision source flag '0' - basic spn, '1'- first
 % collision source is used (fcs/delta-eddington variants)
-
+0
 %%%%%%%%%%% OUTPUT %%%%%%%%%%%%%%%%%
 % mesh - mesh structure as well as  optical properties
 % Jd - exiting partial current measurements 
@@ -17,7 +17,10 @@ function [mesh,Jd,Fluence,varargout]=Datagen_validation(simulation,SettingsFile,
 % storing fluence values. 1:NofNodes - Excitation fluence,
 % NofNodes:2*NofNodes - Emission fluence
 % Optional - varargout {1} = phi_u - uncollided fluence
-
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
 %%
 if ~isempty(varargin)
     gammaval = varargin{1};

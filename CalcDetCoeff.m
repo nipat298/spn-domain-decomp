@@ -1,4 +1,20 @@
 function J=CalcDetCoeff(N,n0,ni)
+%% Calculate J -type coefficients for partial current measurement
+%%%%%%%%%%%% INPUT
+% N - order of SPN approximation
+% n0 - refractive index of outside medium / fiber
+% ni - refractive index of the medium
+%%%%%%%%%%%% OUTPUT
+% J - [(N+1) X 1] vector containing J-type coefficients. 
+% Refer Klose et al for details. 
+
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+
+
+
 for ii=1:2*N
 a=getr(ii,n0,ni);                                                
 R(ii)=(integral(a,0,pi/2));

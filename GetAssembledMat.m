@@ -1,12 +1,17 @@
 function Tsparse=GetAssembledMat(Dimension,N,Iv,Jv,Nodes,varargin)
-%generates assembled matrices 
-%INPUT ARGUMENTS
+%% generates assembled matrices 
+%%%%%%%%%%%%%%%INPUT ARGUMENTS
 %fname2- mat file cotnaining the assembly matrices
 %Nodes - number of nodes
-%C1,C2,C3 are matrices in nodal basis
+%C1,C2,C3 are matrices in elemental basis
 %K1,K2,K3 assembly matrices
-%OUTPUT ARGUMENTS
+%%%%%%%%%%%%%OUTPUT ARGUMENTS
 %Tsparse Sparse matrix.
+%%
+% Created by Nishigandha Patil
+% IIT Kanpur
+% nipat@iitk.ac.in, nishi.rpatil@gmail.com
+%%
 D=Dimension+1;
 if nargin>=7
     C1=varargin{1};
