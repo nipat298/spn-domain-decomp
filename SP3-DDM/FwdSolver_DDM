@@ -72,22 +72,31 @@ if (SimType)
     alpha=1/(mesh_spacing);
  
     for ii=1:NoDomains
-        [Ks,Km,Kb,Kb_art,Iv,Jv]=assemble_ddm(mesh,partmat,ii);
-        elem_sub=partmat(ii).ECM(:,5);
-        B=zeros((N+1)/2,(N+1)/2,elem_sub);    B1=B;
+        [Ks,Km,Kb,Iv,Jv]=assemble_ddm(mesh,partmat,ii);
+        elem_sublen=length(partmat(ii).ECM(:,5));
+         B=zeros(((N+1)/2),((N+1)/2),elem_sublen);    B1=B;
+%         B=zeros((N+1)/2,(N+1)/2,elem_sub);    B1=B;
         %Generates the boundary term in equation (57)
-        ogbound_elem=partmat(ii).belem;
+        ogbound_elem=partmat(ii).belem(:,1);
+        ogbound_elemGB=partmat(ii).ECM(ogbound_elem,5);
         for i=1:size(ogbound_elem,1)
-            B(:,:,ogbound_elem(i,1))=CgradphiX(:,:,ogbound_elem(i,1))/CgradbphiX(:,:,ogbound_elem(i,1));
-            B1(:,:,ogbound_elem(i,1))=B(:,:,ogbound_elem(i,1))*CbphiX(:,:,ogbound_elem(i,1));
+%             B(:,:,ogbound_elem(i,1))=CgradphiX(:,:,ogbound_elem(i,1))/CgradbphiX(:,:,ogbound_elem(i,1));
+%             B1(:,:,ogbound_elem(i,1))=B(:,:,ogbound_elem(i,1))*CbphiX(:,:,ogbound_elem(i,1));
+              B(:,:,ogbound_elem(i,1))=CgradphiX(:,:,ogbound_elem(i,1))/CgradbphiX(:,:,ogbound_elemGB(i,1));
+              B1(:,:,ogbound_elem(i,1))=B(:,:,ogbound_elem(i,1))*CbphiX(:,:,ogbound_elemGB(i,1));
+
         end
         
         disp('Generate Sparse Assembly matrix... ')
         sub_nodes=partmat(ii).nodes;
-        partmat(ii).Gsub = GetAssembledMat_ddm(sub_nodes,Dimension,N,Iv,Jv,Nodes,CgradphiX(:,:,elem_sub),Ks,CphiX(:,:,elem_sub),Km,B1,Kb);
+        partmat(ii).Gsub = GetAssembledMat_ddm(sub_nodes,Dimension,N,Iv,Jv,Nodes,CgradphiX(:,:,elem_sublen),Ks,CphiX(:,:,elem_sublen),Km,B1,Kb);
         
-        temp_int=interface_mm(partmat,mesh.nodes,NoDomains);
-         partmat(ii).RHS_extra=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
+        temp_int=interface_mm(partmat(ii),mesh.nodes,NoDomains);
+        for j=1:NoDomains
+            partmat(ii).RHS_extra(j)=[temp_int(j), zeros(size(temp_int(j)));zeros(size(temp_int(j))), temp_int(j)];
+        end
+            
+%          partmat(ii).RHS_extra=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
          
           node_len=length(sub_nodes);
         LHS_extra=sparse(node_len,node_len);
@@ -322,23 +331,40 @@ else
     for ii=1:NoDomains
         [Ks,Km,Kb,Iv,Jv]=assemble_ddm(mesh,partmat,ii);
         elem_sub=partmat(ii).ECM(:,5);
-        B=zeros((N+1)/2,(N+1)/2,elem_sub);    B1=B;
+        elem_sublen=length(partmat(ii).ECM(:,5));
+        B=zeros((N+1)/2,(N+1)/2,elem_sublen);    B1=B;
         %Generates the boundary term in equation (57)
-        ogbound_elem=partmat(ii).belem;
+        ogbound_elem=partmat(ii).belem(:,1);
+        ogbound_elemGB=partmat(ii).ECM(ogbound_elem,5);
         for i=1:size(ogbound_elem,1)
-            B(:,:,ogbound_elem(i,1))=CgradphiX(:,:,ogbound_elem(i,1))/CgradbphiX(:,:,ogbound_elem(i,1));
-            B1(:,:,ogbound_elem(i,1))=B(:,:,ogbound_elem(i,1))*CbphiX(:,:,ogbound_elem(i,1));
+            B(:,:,ogbound_elem(i,1))=CgradphiX(:,:,ogbound_elem(i,1))/CgradbphiX(:,:,ogbound_elemGB(i,1));
+            B1(:,:,ogbound_elem(i,1))=B(:,:,ogbound_elem(i,1))*CbphiX(:,:,ogbound_elemGB(i,1));
         end
         
         disp('Generate Sparse Assembly matrix... ')
         sub_nodes=partmat(ii).nodes;
         partmat(ii).Gsub = GetAssembledMat_ddm(sub_nodes,Dimension,N,Iv,Jv,Nodes,CgradphiX(:,:,elem_sub),Ks,CphiX(:,:,elem_sub),Km,B1,Kb);
         
-        temp_int=interface_mm(partmat,mesh.nodes,NoDomains);
-         partmat(ii).RHS_extra=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
+%         temp_int=interface_mm(partmat(ii),mesh.nodes,NoDomains);
+% % % %          temp_int=interface_mm(partmat(ii),mesh.nodes,NoDomains);
+% % % %          for j=1:NoDomains
+% % % %             partmat(ii).RHS_extra(j)=[temp_int(j), zeros(size(temp_int(j)));zeros(size(temp_int(j))), temp_int(j)];
+% % % %         end
+         %partmat(ii).RHS_extra=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
+         
+         ABC=interface_mm(partmat(ii),mesh.nodes,NoDomains);
+         
+         for j=1:NoDomains
+             temp_int=ABC.RHS_extra{j};
+             temp_mat=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
+             partmat(ii).RHS_extra{j}=temp_mat;
+%              partmat(ii).RHS_extra(j)=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
+         end
+         
          
           node_len=length(sub_nodes);
-        LHS_extra=sparse(node_len,node_len);
+          LHS_extra=sparse(node_len,node_len);
+          LHS_extra=[LHS_extra, zeros(size(LHS_extra));zeros(size(LHS_extra)), LHS_extra];
         for j=1:NoDomains
             if j==ii
                 continue
@@ -346,7 +372,7 @@ else
                 LHS_extra=LHS_extra+partmat(ii).RHS_extra{j};
             end
         end
-        partmat(ii).LHS=(alpha)*[LHS_extra, zeros(size(LHS_extra));zeros(size(LHS_extra)), LHS_extra];
+        partmat(ii).LHS=(alpha)*LHS_extra;
         partmat(ii).Gsub=partmat(ii).Gsub+partmat(ii).LHS;
 %         partmat(ii).Gsub=A_sub(sub_nodes,sub_nodes);
         
@@ -360,7 +386,8 @@ else
          
         
         for s=1:NofSources
-            elemindex=find(partmat(i).ECM(:,5)==Src(s).elem);
+%             elemindex=find(partmat(ii).ECM(:,5)==Src(s).elem);
+            elemindex=ismember(partmat(ii).ECM(:,5),Src(s).elem);
             if ~isempty(elemindex)
                 sub_nodes=partmat(ii).nodes;
                 SX_sub=GetSource(Dimension,N,CgradphiX,CgradbphiX,mesh.nodes,mesh.tri,Src(s));
@@ -371,37 +398,63 @@ else
     end
     
     
+% load('partmat_OS')
     
     partmat=OptimalSchwarz(partmat,alpha,N);
     
+    % 
+    PhiX=zeros(2*Nodes,1);
+    for ii=1:NoDomains
+    PhiX(partmat(ii).nodes)=partmat(ii).soln(1:length(partmat(ii).nodes));
+    
+    n11(:)=partmat(ii).nodes(:)+ Nodes;
+    n11=n11';
+    PhiX(n11)=partmat(ii).soln((1+length(partmat(ii).nodes)):end);
+    end
+
+% PhiX(partmat(2).nodes)=partmat(2).soln(1:length(partmat(2).nodes)); %Because nodes from second subdomain are being assigned value after first, so interface nodes would automatically take up the fluence values from 2nd subdomain
+% n22(:)=partmat(2).nodes(:)+ Nodes;
+% n22=n22';
+% PhiX(n22)=partmat(2).soln((1+length(partmat(2).nodes)):end);
+% 
+% PhiX(partmat(3).nodes)=partmat(3).soln(1:length(partmat(3).nodes));
+% n33(:)=partmat(3).nodes(:)+ Nodes;
+% n33=n33';
+% PhiX(n33)=partmat(3).soln((1+length(partmat(3).nodes)):end);
+% 
+% PhiX(partmat(4).nodes)=partmat(4).soln(1:length(partmat(4).nodes));
+% n44(:)=partmat(4).nodes(:)+ Nodes;
+% n44=n44';
+% PhiX(n44)=partmat(4).soln((1+length(partmat(4).nodes)):end);
+%     
     
     %Solve the forward problem to compute PhiX and PhiM
     
-    AX=Spnfwd(Dimension,N,CgradphiX,CphiX,CgradbphiX,CbphiX,mesh,Iv,Jv,Ks,Km,Kb);
+    %AX=Spnfwd(Dimension,N,CgradphiX,CphiX,CgradbphiX,CbphiX,mesh,Iv,Jv,Ks,Km,Kb);
     
     %     SX=GetSource(Dimension,N,CgradphiX,CgradbphiX,mesh.nodes,mesh.tri,mesh.edgeElem,mesh.edgeType,Src);
-    for s=1:NofSources
-        SX(:,s)=GetSource(Dimension,N,CgradphiX,CgradbphiX,mesh.nodes,mesh.tri,Src(s));
-        %     PhiX(:,s) = gmres(AX,SX(:,s),gm_restart, gm_tol, gm_maxit);
-    end
-    
-    switch options.itersolver
-        case 'none'
-            PhiX = AX\SX;
-        case 'gmres'
-            for s=1:NofSources
-                PhiX(:,s) = gmres(AX,SX(:,s),options.restart,options.tol, options.maxit);
-            end
-        case 'bicgstab'
-            for s=1:NofSources
-                PhiX(:,s) = bicgstab(AX,SX(:,s),options.tol, options.maxit);
-            end
-        case 'pcg'
-            for s=1:NofSources
-                PhiX(:,s) = pcg(AX,SX(:,s),options.tol, options.maxit);
-            end
-    end
-    
+%     for s=1:NofSources
+%         SX(:,s)=GetSource(Dimension,N,CgradphiX,CgradbphiX,mesh.nodes,mesh.tri,Src(s));
+%         %     PhiX(:,s) = gmres(AX,SX(:,s),gm_restart, gm_tol, gm_maxit);
+%     end
+%     
+%     switch options.itersolver
+%         case 'none'
+%             PhiX = AX\SX;
+%         case 'gmres'
+%             for s=1:NofSources
+%                 PhiX(:,s) = gmres(AX,SX(:,s),options.restart,options.tol, options.maxit);
+%             end
+%         case 'bicgstab'
+%             for s=1:NofSources
+%                 PhiX(:,s) = bicgstab(AX,SX(:,s),options.tol, options.maxit);
+%             end
+%         case 'pcg'
+%             for s=1:NofSources
+%                 PhiX(:,s) = pcg(AX,SX(:,s),options.tol, options.maxit);
+%             end
+%     end
+%     
     
     %     PhiX=AX\SX;
     %     PhiX = gmres(AX,SX,gm_restart, gm_tol, gm_maxit);
@@ -449,4 +502,3 @@ else
     
 end
 fprintf('\nDone... \n');
-
