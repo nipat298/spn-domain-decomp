@@ -12,7 +12,7 @@ addpath('smw\');
 
 
 assemble_on_fly=1;
-SettingsFile = 'test_el_3D';
+SettingsFile = 'lu_mc_test';
 %%
 disp('Running for basic SPN with source at 1mfp')
 func = @FwdSolver;
@@ -32,7 +32,9 @@ for s=1:NofSources
     Source(s).mfreq = 2*pi*Source(s).mfreq*1e6; % Store modulation frequency
 end
 
+%%
 
+%%%%% Commented on 26th June 2022 %%%%%%%%%%%%%%
 if (Dimension==2)
     if isempty(shape)
         [mesh,Src,Det]=MeshGen2D_new(saveMesh,Domain,h,Source,Detector); % Generate the triangulation and meshing information
@@ -62,6 +64,10 @@ else
         AssemblyFile = @Assemble_on_fly_3D;
     end
 end
+%%
+
+%  mesh=MeshGen3D_new(Domain,h);
+ 
 NofElem=size(mesh.tri,1); % # of elements
 n0=external_ref_ind;
 
@@ -147,12 +153,18 @@ for s=1:NofSources
             Src(s).ang_in =temp; 
         elseif Src(s).Loc(1,2)==Domain(4)
             Src(s).ang_in=360-Src(s).AOI;
+        elseif Src(s).Loc(3)==Domain(5)
+                %         normal_in = '+z'
+                Src(s).ang_in =temp; %180-Src(s).AOI ;
+        elseif Src(s).Loc(3)==Domain(6)
+                Src(s).ang_in=360-Src(s).AOI;
         end
-            mu_t_mean = mean(mesh.opt.muaxi + mesh.opt.muaxf + mesh.opt.musx*(1-mesh.opt.gx));
+            %mu_t_mean = mean(mesh.opt.muaxi + mesh.opt.muaxf + mesh.opt.musx*(1-mesh.opt.gx));
+            mu_t_mean = mean(mesh.opt.muaxi + mesh.opt.musx*(1-mesh.opt.gx));
             mfp = 1/(mu_t_mean);
             Src(s).ID = 'I';
             %           Src(s) = get_one_mfp_source(Domain,mesh,Src(s),mfp);
-            Src(s) = get_one_mfp_source(mesh,Src(s),mfp);
+            Src(s) = get_one_mfp_source(Dimension,mesh,Src(s),mfp);
     end
 end
 
