@@ -3,9 +3,9 @@ function Tsparse=GetAssembledMat_ddm(sub_nodes,Dimension,N,Iv,Jv,Nodes,varargin)
 %INPUT ARGUMENTS
 %fname2- mat file cotnaining the assembly matrices
 %Nodes - number of nodes
-%C1,C2,C3 are matrices in nodal basis
+%C1,C2,C3 are matrices in nodal basis%OUTPUT ARGUMENTS
+
 %K1,K2,K3 assembly matrices
-%OUTPUT ARGUMENTS
 %Tsparse Sparse matrix.
 D=Dimension+1;
 if nargin>=7
@@ -16,7 +16,7 @@ if nargin>=7
         T11=[];
         for jj=1:(N+1)/2
              T=repmat(C1(ii,jj,:),D,D).*K1;
-             M=sparse(Iv,Jv,T(:),Nodes,Nodes);
+             M=sparse(Iv(:),Jv(:),T(:),Nodes,Nodes);
              M=M(sub_nodes,sub_nodes);
              T11=[T11,M];
         end
@@ -32,7 +32,7 @@ if nargin>=9
         T21=[];
         for jj=1:(N+1)/2
              T=repmat(C2(ii,jj,:),D,D).*K2;
-             M=sparse(Iv,Jv,T(:),Nodes,Nodes);
+             M=sparse(Iv(:),Jv(:),T(:),Nodes,Nodes);
              M=M(sub_nodes,sub_nodes);
              T21=[T21,M];
         end
@@ -48,7 +48,7 @@ if nargin>=11
         T31=[];
         for jj=1:(N+1)/2
              T=repmat(C3(ii,jj,:),D,D).*K3;
-             M=sparse(Iv,Jv,T(:),Nodes,Nodes);
+             M=sparse(Iv(:),Jv(:),T(:),Nodes,Nodes);
              M=M(sub_nodes,sub_nodes);
              T31=[T31,M];
         end
