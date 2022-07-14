@@ -11,10 +11,11 @@ pfuncflag = 0; % type of phase function. set to 0 - Henyey Greenstein,
 %                                        2- two term Henyey Greenstein Phase function
 %% Problem Geometry
 Dimension = 3; % Choose '2' for 2D and '3' for 3D
+
 h=[0.05,0.05,0.05]; %Mesh spacing for structured mesh. Recommended to use same mesh size in each dimension, 
                 % however you can specify different mesh size if needed.
                 % [hx,hy] or [hx,hy,hz]
-Domain=[-1,1,-1,1,0,2]; %,0,0.1]; %[xmin,xmax,ymin,ymax] or [xmin,xmax,ymin,ymax,zmin,zmax] respectively
+Domain=[-1,1,-1,1,0,2];  %[xmin,xmax,ymin,ymax] or [xmin,xmax,ymin,ymax,zmin,zmax] respectively
 %Specifications of the inhomogeneities
 shape = [];
 
@@ -36,7 +37,8 @@ Source(1).ID='S'; % Choose 'S' for surface, 'I' for internal source
 Source(1).Strength=complex(cos(0.15),sin(0.15)); % Source strength in mW
 Source(1).nfibre =1; % refractive index of fibre core
 Source(1).NA =0.22; % numerical aperture of the fibre
-Source(1).Loc=[0,0,0]; % source location
+Source(1).Loc=[-0.3,0,0]; % source location
+%Source(1).Loc=[-1,-1,0];
 Source(1).Radius = 0.000001; % set beam radius. For pencil beam set radius less than min(hx,hy)
 % 
 % Source(2).Type='point'; % Type of source point or collimated
