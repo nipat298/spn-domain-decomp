@@ -3,7 +3,7 @@ function partmat= ddm_interfacing(mesh,NoDomains,varargin)
 
 ElemConnMatrix = [mesh.tri(:,1),mesh.tri(:,2),mesh.tri(:,3),mesh.tri(:,4)];
 NofNodes=size(mesh.nodes,1);
-interface_xyz=['x','x','x'];
+% interface_xyz=['x','x','x'];
 
 t=ElemConnMatrix(:,:);
 Nfaces=size(mesh.tri,2);
@@ -145,7 +145,7 @@ end
 % Forming ElemConnMatrix for subdomains
 partmat=ECM_3D(partmat,ElemConnMatrix,NoDomains);
  
-%Classifyingoriginal boundary and interface triangles for each subdomain
+%Classifying original boundary and interface triangles for each subdomain
 partmat=boundtri_bdelem_3D(partmat,NoDomains);
 for i=1:NoDomains
     tt1=ismember(partmat(i).boundtri,partmat(i).inter_tot);
