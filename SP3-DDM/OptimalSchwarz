@@ -1,7 +1,8 @@
 function partmat=OptimalSchwarz(partmat,alpha,N)
+tic
 tol = 1e-6;
 maxit = 1000;
-NoDomains=size(partmat,1);
+NoDomains=size(partmat,2);
 
 g_ini=cell(NoDomains,NoDomains); % Initial assumption for interface nodes
 
@@ -11,8 +12,8 @@ for i=1:NoDomains
         if j==i
             continue
         else
-            len=length(partmat(i).int_local{j});
-            g_int=zeros(((N+1)/2)*len,1);
+            len_int=length(partmat(i).int_local{j});
+            g_int=zeros(((N+1)/2)*len_int,1);
             g_ini{i,j}=g_int;
             partmat(i).robin{j}=zeros(len_sub,1);
         end
@@ -30,14 +31,18 @@ iter=0;
  while max_tol>0.01 || iter<=2
     for i=1:NoDomains
         len_node=length(partmat(i).nodes);
+        % The RHS_temp variable is the RHS_extra variable from noMETIS_4sub code
         RHS_temp=zeros(((N+1)/2)*len_node,1);
         for j=1:NoDomains
             if j==i
                 continue
             else
                int_node=partmat(i).int_local{j};
+               len_sp3= int_node(:,1) + len_node;
                partmat(i).robin{j}(int_node)=g_ini{i,j}(1:length(int_node));
-               partmat(i).robin{j}(int_node+len_node)=g_ini{i,j}(1+length(int_node):end);
+               partmat(i).robin{j}(len_sp3)=g_ini{i,j}((1+length(int_node)):end);
+                
+%                partmat(i).robin{j}(int_node+len_node)=g_ini{i,j}((1+length(int_node)):end);
             
                RHS_temp=RHS_temp+(partmat(i).RHS_extra{j}*partmat(i).robin{j});
             end
@@ -56,9 +61,10 @@ iter=0;
             if j==i
                 continue
             else
-                len_int=partmat(i).int_local{j};
-                u_int{i,j}(1:length(int_node))=partmat(i).soln(len_int);
-                u_int{i,j}(1+length(int_node):end)=partmat(i).soln(len_int+len_node);
+                int_node=partmat(i).int_local{j};
+                len_sp3= int_node(:,1) + len_node;
+                u_int{i,j}((1:length(int_node)),1)=partmat(i).soln(int_node);
+                u_int{i,j}(((1+length(int_node)):(2*length(int_node))),1)=partmat(i).soln(len_sp3);
             end
         end
     end
@@ -81,4 +87,7 @@ iter=0;
     iter=iter+1;
     disp(iter);
 %      iter=iter-1;
+
+
+toc
  end
