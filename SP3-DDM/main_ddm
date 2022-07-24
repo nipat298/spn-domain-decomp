@@ -181,9 +181,12 @@ solver_options.pfuncflag = pfuncflag;
 solver_options.evalFluence = evalFluence; 
 solver_options.probType = probType;
 
+mesh_spacing=mean([mesh.hx,mesh.hy,mesh.hz]);
+alpha=1/(mesh_spacing);
+beta=1/((mesh_spacing)^2);
 
 NoDomains=4;
 partmat= ddm_interfacing(mesh,NoDomains);
 
-[Jd_pert,PhiX_pert]=FwdSolver_DDM(Dimension,N,SimType,mesh2,partmat,Src,Det,AssemblyFile,solver_options);
+[Jd_pert,PhiX_pert]=FwdSolver_DDM(Dimension,N,SimType,mesh2,partmat,Src,Det,alpha,beta,AssemblyFile,solver_options);
 
