@@ -1,4 +1,4 @@
-function [Jd,varargout]=FwdSolver_DDM(Dimension,N,SimType,mesh,partmat,Src,Det,AssemblyFile,options)
+function [Jd,varargout]=FwdSolver_DDM(Dimension,N,SimType,mesh,partmat,Src,Det,alpha,beta,AssemblyFile,options)
 %%
 % Modified on 4th Dcember 2020 to support extended sources
 % Modified on 9th April 2019
@@ -68,9 +68,7 @@ if (SimType)
     
     NoDomains=size(partmat,1);
     
-    beta=1/(mesh_spacing^2);
-    alpha=1/(mesh_spacing);
- 
+   
     for ii=1:NoDomains
         [Ks,Km,Kb,Iv,Jv]=assemble_ddm(mesh,partmat,ii);
         elem_sublen=length(partmat(ii).ECM(:,5));
@@ -91,7 +89,7 @@ if (SimType)
         sub_nodes=partmat(ii).nodes;
         partmat(ii).Gsub = GetAssembledMat_ddm(sub_nodes,Dimension,N,Iv,Jv,Nodes,CgradphiX(:,:,elem_sublen),Ks,CphiX(:,:,elem_sublen),Km,B1,Kb);
         
-        temp_int=interface_mm(partmat(ii),mesh.nodes,NoDomains);
+        temp_int=interface_mm(partmat(ii),mesh.nodes,NoDomains,beta);
         for j=1:NoDomains
             partmat(ii).RHS_extra(j)=[temp_int(j), zeros(size(temp_int(j)));zeros(size(temp_int(j))), temp_int(j)];
         end
@@ -325,9 +323,7 @@ else
     
      NoDomains=size(partmat,2);
     
-    beta=1/(mesh_spacing^2);
-    alpha=1/(mesh_spacing);
- 
+     
     for ii=1:NoDomains
         [Ks,Km,Kb,Iv,Jv]=assemble_ddm(mesh,partmat,ii);
         elem_sub=partmat(ii).ECM(:,5);
@@ -352,7 +348,7 @@ else
 % % % %         end
          %partmat(ii).RHS_extra=[temp_int, zeros(size(temp_int));zeros(size(temp_int)), temp_int];
          
-         ABC=interface_mm(partmat(ii),mesh.nodes,NoDomains);
+         ABC=interface_mm(partmat(ii),mesh.nodes,NoDomains,beta);
          
          for j=1:NoDomains
              temp_int=ABC.RHS_extra{j};
