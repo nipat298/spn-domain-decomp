@@ -1,4 +1,4 @@
-% function RHS_extra=interface_mm(partmat,NodeCoord,N)
+% function RHS_extra=interface_mm(partmat,NodeCoord,N,beta)
 function ABC=interface_mm(partmat,NodeCoord,N)
 
 %%% Variables in this function:
@@ -9,10 +9,6 @@ function ABC=interface_mm(partmat,NodeCoord,N)
 % partmat.art_elem_SD{j}: lists out the elements correspoding to the triangles mentioned in the previous line
 % bound_tri(i): structure formed to store the 4 values required for evaluating area of a triangle
 %%% The four values are a,b,c and s. 
-
-mesh_spacing = 0.05;
-beta=1/(mesh_spacing^2);
-alpha=1/(mesh_spacing);
 
 NC=length(NodeCoord(:,1));
  elem_len=length(partmat.ECM(:,1));
