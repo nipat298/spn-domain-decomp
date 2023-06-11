@@ -1,1 +1,253 @@
+tic
+
+%% Triangulation and Nodal and Connectivity matrix formulation
+clc
+clear all
+mesh_spacing = 0.05;
+xmin = -1; xmax =1; ymin = -1; ymax = 1; zmin = 0; zmax = 2;
+% mesh_spacing = 0.025;
+% xmin = -1.25; xmax =1.25; ymin = -1.25; ymax = 1.25; zmin = 0; zmax = 2.5;
+
+[X,Y,Z] = meshgrid((xmin:mesh_spacing:xmax),(ymin:mesh_spacing:ymax),(zmin:mesh_spacing:zmax)); % generates an equispaced grid of nodes
+NodeCoord = [X(:),Y(:),Z(:)];     % x,y coordinates of the nodes
+DT =  delaunayTriangulation(NodeCoord);
+ElemConnMatrix = [DT(:,1),DT(:,2),DT(:,3),DT(:,4)];
+
+NOC=NodeCoord(:,:);
+ECM=ElemConnMatrix(:,:,:);
+
+%% DEFINE CONSTANTS
+speed_of_light = 3*1e10; % speed of light in cm/s sinode_lene all our units are in cms
+mua = 0.031;
+mus = 54.75; % Scattering coefficient
+g = 0.8; % ANisotropy factor
+n_in = 1.37; % refractive index of the medium 
+n_out = 1; % refractive index of the outside medium
+speed_in_med=speed_of_light/n_in; 
+Ref_coeff_top = 0.431; % Reflection Coefficient at the top of the domain
+A=(1+Ref_coeff_top)/(1-Ref_coeff_top);
+
+mod_freq = 2*pi*100*1e6; % modulation frequenode_leny of the source in MHz. 
+
+mfp = mean(1/(mua+(1-g)*mus)); % This is the transport mean free path
+
+%%Source_loc = [-1,-1 + mfp,0]; In the recnt case
+
+%Source_loc = [-1,1,0+mfp];
+Source_loc = [-0.15,0,0];
+% Source_loc = [0,-1 + mfp,0];
+
+
+
+%% Source Calculation
+sourceelem=pointLocation(DT,Source_loc); 
+
+[ID,dd]=nearestNeighbor(DT,Source_loc);
+s=length(ID); %s is the number of sources
+
+source=zeros(length(NodeCoord),1);
+
+n1=ElemConnMatrix(sourceelem,1); 
+n2=ElemConnMatrix(sourceelem,2);
+n3=ElemConnMatrix(sourceelem,3);
+n4=ElemConnMatrix(sourceelem,4);
+
+ 
+  x1s=NodeCoord(n1,1); x2s=NodeCoord(n2,1); x3s=NodeCoord(n3,1); x4s=NodeCoord(n4,1);
+  y1s=NodeCoord(n1,2); y2s=NodeCoord(n2,2); y3s=NodeCoord(n3,2); y4s=NodeCoord(n4,2);
+  z1s=NodeCoord(n1,3); z2s=NodeCoord(n2,3); z3s=NodeCoord(n3,3); z4s=NodeCoord(n4,3);
+  
+
+  xcoord=Source_loc(1,1);
+  ycoord=Source_loc(1,2);
+  zcoord=Source_loc(1,3);
+  
+a1s=x2s.*(y3s.*z4s-y4s.*z3s) - x3s.*(y2s.*z4s-y4s.*z2s) + x4s.*(y2s.*z3s-y3s.*z2s);
+a2s=-(x1s.*(y3s.*z4s-y4s.*z3s) - x3s.*(y1s.*z4s-y4s.*z1s) + x4s.*(y1s.*z3s-y3s.*z1s));
+a3s=x1s.*(y2s.*z4s-y4s.*z2s) - x2s.*(y1s.*z4s-y4s.*z1s) + x4s.*(y1s.*z2s-y2s.*z1s);
+a4s=-(x1s.*(y2s.*z3s-y3s.*z2s) - x2s.*(y1s.*z3s-y3s.*z1s) + x3s.*(y1s.*z2s-y2s.*z1s));
+
+b1s=-((y3s.*z4s-y4s.*z3s) - (y2s.*z4s-y4s.*z2s) + (y2s.*z3s-y3s.*z2s));
+b2s=(y3s.*z4s-y4s.*z3s) - (y1s.*z4s-y4s.*z1s) + (y1s.*z3s-y3s.*z1s);
+b3s=-((y2s.*z4s-y4s.*z2s) - (y1s.*z4s-y4s.*z1s) + (y1s.*z2s-y2s.*z1s));
+b4s=(y2s.*z3s-y3s.*z2s) - (y1s.*z3s-y3s.*z1s) + (y1s.*z2s-y2s.*z1s);
+
+c1s=(x3s.*z4s-x4s.*z3s) - (x2s.*z4s-x4s.*z2s) + (x2s.*z3s-x3s.*z2s);
+c2s=-((x3s.*z4s-x4s.*z3s) - (x1s.*z4s-x4s.*z1s) + (x1s.*z3s-x3s.*z1s));
+c3s=(x2s.*z4s-x4s.*z2s) - (x1s.*z4s-x4s.*z1s) + (x1s.*z2s-x2s.*z1s);
+c4s=-((x2s.*z3s-x3s.*z2s) - (x1s.*z3s-x3s.*z1s) + (x1s.*z2s-x2s.*z1s));
+
+d1s=(y3s.*x4s-y4s.*x3s) - (y2s.*x4s-y4s.*x2s) + (y2s.*x3s-y3s.*x2s);
+d2s=-((y3s.*x4s-y4s.*x3s) - (y1s.*x4s-y4s.*x1s) + (y1s.*x3s-y3s.*x1s));
+d3s=(y2s.*x4s-y4s.*x2s) - (y1s.*x4s-y4s.*x1s) + (y1s.*x2s-y2s.*x1s);
+d4s=-((y2s.*x3s-y3s.*x2s) - (y1s.*x3s-y3s.*x1s) + (y1s.*x2s-y2s.*x1s));
+
+vol_elem=(1/6)*det([1,1,1,1; x1s,x2s,x3s,x4s; y1s,y2s,y3s,y4s; z1s,z2s,z3s,z4s]);
+
+source(n1,1)=(a1s+ b1s.*xcoord+ c1s.*ycoord+ d1s.*zcoord)./(6*vol_elem);
+source(n2,1)=(a2s+ b2s.*xcoord+ c2s.*ycoord+ d2s.*zcoord)./(6*vol_elem);
+source(n3,1)=(a3s +b3s.*xcoord+ c3s.*ycoord+ d3s.*zcoord)./(6*vol_elem);
+source(n4,1)=(a4s +b4s.*xcoord+ c4s.*ycoord+ d4s.*zcoord)./(6*vol_elem);
+  
+% %    elemvol_source=(1/6)*(det([x2s x3s x4s; y2s y3s y4s; z2s z3s z4s])-(det([x1s x3s x4s; y1s y3s y4s; z1s z3s z4s]))+(det([x1s x2s x4s; y1s y2s y4s; z1s z2s z4s]))-(det([x1s x2s x3s; y1s y2s y3s; z1s z2s z3s])));
+% %   
+% %   source(n1,1)=((det([x2s x3s x4s; y2s y3s y4s; z2s z3s z4s]))-(det([xcoord x3s x4s; ycoord y3s y4s; zcoord z3s z4s]))+(det([xcoord x2s x4s; ycoord y2s y4s; zcoord z2s z4s]))-(det([xcoord x2s x3s; ycoord y2s y3s; zcoord z2s z3s])))/abs(elemvol_source);
+% %   source(n2,1)=((det([xcoord x3s x4s; ycoord y3s y4s; zcoord z3s z4s]))-(det([x1s x3s x4s; y1s y3s y4s; z1s z3s z4s]))+(det([x1s xcoord x4s; y1s ycoord y4s; z1s zcoord z4s]))-(det([x1s xcoord x3s; y1s ycoord y3s; z1s zcoord z3s])))/abs(elemvol_source);
+% %   source(n3,1)=((det([x2s xcoord x4s; y2s ycoord y4s; z2s zcoord z4s]))-(det([x1s xcoord x4s; y1s ycoord y4s; z1s zcoord z4s]))+(det([x1s x2s x4s; y1s y2s y4s; z1s z2s z4s]))-(det([x1s x2s xcoord; y1s y2s ycoord; z1s z2s zcoord])))/abs(elemvol_source);
+% %   source(n4,1)=((det([x2s x3s xcoord; y2s y3s ycoord; z2s z3s zcoord]))-(det([x1s x3s xcoord; y1s y3s ycoord; z1s z3s zcoord]))+(det([x1s x2s xcoord; y1s y2s ycoord; z1s z2s zcoord]))-(det([x1s x2s x3s; y1s y2s y3s; z1s z2s z3s])))/abs(elemvol_source);
+%   
+%   source(:,1)=10.*source(:,1);
+ 
+  %% Matrix assembly %%
+  
+   node_len=length(NodeCoord(:,1));
+  
+  elem_len=length(ElemConnMatrix(:,1));
+    
+    D=zeros(elem_len,1);
+    muat=0.031*ones(elem_len,1);
+    D(:,1)=1./(3*(muat(:,1)+(1-g)*mus));
+
+    D=reshape(D,1,1,elem_len);
+    muat=reshape(muat,1,1,elem_len);
+   
+    c_speed=speed_of_light;
+    
+% %     [Ks,Km]=Assemble3D(NodeCoord,ElemConnMatrix);
+% %     
+% %     Kstiff=repmat(D(1,1,:),4,4).*Ks;
+% %     Kmass=repmat(muat(1,1,:),4,4).*Km+ ((1i*mod_freq)/speed_in_med).*Km;
+    x1=NodeCoord(ElemConnMatrix(:,1),1);
+    x2=NodeCoord(ElemConnMatrix(:,2),1);
+    x3=NodeCoord(ElemConnMatrix(:,3),1);
+    x4=NodeCoord(ElemConnMatrix(:,4),1);
+
+
+    y1=NodeCoord(ElemConnMatrix(:,1),2);
+    y2=NodeCoord(ElemConnMatrix(:,2),2);
+    y3=NodeCoord(ElemConnMatrix(:,3),2);
+    y4=NodeCoord(ElemConnMatrix(:,4),2);
+
+    z1=NodeCoord(ElemConnMatrix(:,1),3);
+    z2=NodeCoord(ElemConnMatrix(:,2),3);
+    z3=NodeCoord(ElemConnMatrix(:,3),3);
+    z4=NodeCoord(ElemConnMatrix(:,4),3);
+
+
+  
+    a1(1,1,:) = x2.*(y3.*z4 - y4.*z3) + x3.*(y4.*z2 - y2.*z4) + x4.*(y2.*z3 - y3.*z2);
+    a2(1,1,:) = x1.*(y4.*z3 - y3.*z4) + x3.*(y1.*z4 - y4.*z1) + x4.*(y3.*z1 - y1.*z3);
+    a3(1,1,:) = x1.*(y2.*z4 - y4.*z2) + x2.*(y4.*z1 - y1.*z4) + x4.*(y1.*z2 - y2.*z1);
+    a4(1,1,:) = x1.*(y3.*z2 - y2.*z3) + x2.*(y1.*z3 - y3.*z1) + x3.*(y2.*z1 - y1.*z2);
+
+    b1(1,1,:) = y2.*(z4-z3) + y3.*(z2-z4) + y4.*(z3-z2);
+    b2(1,1,:) = y1.*(z3-z4) + y3.*(z4-z1) + y4.*(z1-z3);
+    b3(1,1,:) = y1.*(z4-z2) + y2.*(z1-z4) + y4.*(z2-z1);
+    b4(1,1,:) = y1.*(z2-z3) + y2.*(z3-z1) + y3.*(z1-z2);
+
+    c1(1,1,:) = z2.*(x4-x3) + z3.*(x2-x4) + z4.*(x3-x2);
+    c2(1,1,:) = z1.*(x3-x4) + z3.*(x4-x1) + z4.*(x1-x3);
+    c3(1,1,:) = z1.*(x4-x2) + z2.*(x1-x4) + z4.*(x2-x1);
+    c4(1,1,:) = z1.*(x2-x3) + z2.*(x3-x1) + z3.*(x1-x2);
+
+    d1(1,1,:) = x2.*(y4-y3) + x3.*(y2-y4) + x4.*(y3-y2);
+    d2(1,1,:) = x1.*(y3-y4) + x3.*(y4-y1) + x4.*(y1-y3);
+    d3(1,1,:) = x1.*(y4-y2) + x2.*(y1-y4) + x4.*(y2-y1);
+    d4(1,1,:) = x1.*(y2-y3) + x2.*(y3-y1) + x3.*(y1-y2);
+
+    %%% Determinant of Jacobian
+
+    part1(1,1,:)=(x2-x1).*((y3-y1).*(z4-z1)-(z3-z1).*(y4-y1));
+    part2(1,1,:)=(y2-y1).*((z3-z1).*(x4-x1)-(x3-x1).*(z4-z1));
+    part3(1,1,:)=(z2-z1).*((x3-x1).*(y4-y1)-(y3-y1).*(x4-x1));
+    elem_vol(1,1,:)=(1/6)*(part1+part2+part3);
+    
+    
+    %%% Stiffness matrix
+    Ks=zeros(4,4,elem_len);
+
+    Ks(1,1,:)=((b1(1,1,:).^2)+(c1(1,1,:).^2)+(d1(1,1,:).^2))./(36*elem_vol);
+    Ks(1,2,:)=((b1(1,1,:).*b2(1,1,:))+(c1(1,1,:).*c2(1,1,:))+(d1(1,1,:).*d2(1,1,:)))./(36*elem_vol);
+    Ks(1,3,:)=((b1(1,1,:).*b3(1,1,:))+(c1(1,1,:).*c3(1,1,:))+(d1(1,1,:).*d3(1,1,:)))./(36*elem_vol);
+    Ks(1,4,:)=((b1(1,1,:).*b4(1,1,:))+(c1(1,1,:).*c4(1,1,:))+(d1(1,1,:).*d4(1,1,:)))./(36*elem_vol);
+
+    Ks(2,1,:)=Ks(1,2,:);
+    Ks(2,2,:)=((b2(1,1,:).^2)+(c2(1,1,:).^2)+(d2(1,1,:).^2))./(36*elem_vol);
+    Ks(2,3,:)=((b2(1,1,:).*b3(1,1,:))+(c2(1,1,:).*c3(1,1,:))+(d2(1,1,:).*d3(1,1,:)))./(36*elem_vol);
+    Ks(2,4,:)=((b2(1,1,:).*b4(1,1,:))+(c2(1,1,:).*c4(1,1,:))+(d2(1,1,:).*d4(1,1,:)))./(36*elem_vol);
+
+    Ks(3,1,:)=Ks(1,3,:);
+    Ks(3,2,:)=Ks(2,3,:);
+    Ks(3,3,:)=((b3(1,1,:).^2)+(c3(1,1,:).^2)+(d3(1,1,:).^2))./(36*elem_vol);
+    Ks(3,4,:)=((b3(1,1,:).*b4(1,1,:))+(c3(1,1,:).*c4(1,1,:))+(d3(1,1,:).*d4(1,1,:)))./(36*elem_vol);
+
+    Ks(4,1,:)=Ks(1,4,:);
+    Ks(4,2,:)=Ks(2,4,:);
+    Ks(4,3,:)=Ks(3,4,:);
+    Ks(4,4,:)=((b4(1,1,:).^2)+(c4(1,1,:).^2)+(d4(1,1,:).^2))./(36*elem_vol);
+    Kstiff=repmat(D(1,1,:),4,4).*Ks;
+
+
+    %%% Mass matrix
+    Km=zeros(4,4,elem_len);
+    Km=[elem_vol/10, elem_vol/20, elem_vol/20, elem_vol/20
+        elem_vol/20, elem_vol/10, elem_vol/20, elem_vol/20
+        elem_vol/20, elem_vol/20, elem_vol/10, elem_vol/20
+        elem_vol/20, elem_vol/20, elem_vol/20, elem_vol/10];
+    Kmass=repmat(muat(1,1,:),4,4).*Km+ ((1i*mod_freq)/speed_in_med).*Km;
+    
+    
+    %%% Boundary matrix calculations
+    
+    [boundtri,boundelem]=boundedges_element_3D(NodeCoord,ElemConnMatrix);
+    tri_area=zeros(1,1,elem_len); 
+    % In the following eqn, we calculate the area of each boundary triangle and
+    % assign it to the element corresponding to it
+
+    sa=sqrt((NodeCoord(boundtri(:,1),1)-NodeCoord(boundtri(:,2),1)).^2+(NodeCoord(boundtri(:,1),2)-NodeCoord(boundtri(:,2),2)).^2+(NodeCoord(boundtri(:,1),3)-NodeCoord(boundtri(:,2),3)).^2);
+    sb=sqrt((NodeCoord(boundtri(:,2),1)-NodeCoord(boundtri(:,3),1)).^2+(NodeCoord(boundtri(:,2),2)-NodeCoord(boundtri(:,3),2)).^2+(NodeCoord(boundtri(:,2),3)-NodeCoord(boundtri(:,3),3)).^2);
+    sc=sqrt((NodeCoord(boundtri(:,1),1)-NodeCoord(boundtri(:,3),1)).^2+(NodeCoord(boundtri(:,1),2)-NodeCoord(boundtri(:,3),2)).^2+(NodeCoord(boundtri(:,1),3)-NodeCoord(boundtri(:,3),3)).^2);
+    ss=(sa+sb+sc)/2;
+    tri_area(1,1,boundelem(:,1))=sqrt((ss).*(ss-sa).*(ss-sb).*(ss-sc));
+    
+    f_123=[1/6 1/12 1/12 0; 1/12 1/6 1/12 0; 1/12 1/12 1/6 0; 0 0 0 0];
+    f_124=[1/6 1/12 0 1/12; 1/12 1/6 0 1/12; 0 0 0 0; 1/12 1/12 0 1/6];
+    f_134=[1/6 0 1/12 1/12; 0 0 0 0; 1/12 0 1/6 1/12; 1/12 0 1/12 1/6];
+    f_234=[0 0 0 0; 0 1/6 1/12 1/12; 0 1/12 1/6 1/12; 0 1/12 1/12 1/6];
+
+
+    Kb=zeros(4,4,elem_len);
+    
+    i1=find(boundelem(:,2)==1);
+    Kb(:,:,boundelem(i1,1))=repmat(f_123,[1 1 size(i1,1)]).*repmat(tri_area(boundelem(i1,1)),[4,4]);
+    i1=find(boundelem(:,2)==2);
+    Kb(:,:,boundelem(i1,1))=repmat(f_234,[1 1 size(i1,1)]).*repmat(tri_area(boundelem(i1,1)),[4,4]);
+    i1=find(boundelem(:,2)==3);
+    Kb(:,:,boundelem(i1,1))=repmat(f_124,[1 1 size(i1,1)]).*repmat(tri_area(boundelem(i1,1)),[4,4]);
+    i1=find(boundelem(:,2)==4);
+    Kb(:,:,boundelem(i1,1))=repmat(f_134,[1 1 size(i1,1)]).*repmat(tri_area(boundelem(i1,1)),[4,4]);
+    Kbound=(0.5/A).*Kb;
+
+    Ti = reshape((ElemConnMatrix)',[4,1,elem_len]);
+    Tj = reshape((ElemConnMatrix)',[1,4,elem_len]);
+    I = repmat(Ti,1,4);
+    J = repmat(Tj,4,1);
+
+    Kstiff_final = sparse(I(:),J(:),Kstiff(:),node_len,node_len);
+    Kmass_final = sparse(I(:),J(:),Kmass(:),node_len,node_len);
+    Kbound_final = sparse(I(:),J(:),Kbound(:),node_len,node_len);
+
+    % Assembling of global sparse matrix
+   G=Kstiff_final+Kmass_final+Kbound_final;
+   
+    
+    
+    tol = 1e-6;
+	maxit = 500;
+    
+    Phi=gmres(G,source,[],tol,maxit);
+
+    
+   
+    toc
 
