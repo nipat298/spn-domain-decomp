@@ -1,0 +1,106 @@
+function partmat= ddm_interfacingDOT(mesh,NoDomains,int_axes,Domain)
+
+NofNodes=size(mesh.nodes,1);
+Nfaces=size(mesh.tri,2);
+Nelem=size(mesh.tri,1);
+
+switch(int_axes)
+    case 'x'
+        dmin=Domain(1);
+        dmax=Domain(2);
+        coord=1;
+    case 'y'
+        dmin=Domain(3);
+        dmax=Domain(4);
+        coord=2;
+    case 'z'
+        dmin=Domain(5);
+        dmax=Domain(6);
+        coord=3;
+end
+sd_len=(dmax-dmin)/NoDomains;
+tol = 1e-6;
+
+interface_nodes=[];
+for kk=1:(NoDomains-1)
+    interface(kk).planes= dmin + kk*sd_len;
+    disp(interface(kk).planes);
+    nod=find((abs(mesh.nodes(:,coord)-interface(kk).planes))>=0 & abs((mesh.nodes(:,coord)-interface(kk).planes))<tol);
+    interface(kk).nodes=nod;
+    interface_nodes=[interface_nodes interface(kk).nodes];
+end
+
+for kk=1:NoDomains
+    Subdomain(kk).nodes=[];
+end
+
+for cc=1:NofNodes
+    for kk=1:NoDomains
+        if kk==1
+            if mesh.nodes(cc,coord)>=dmin && mesh.nodes(cc,coord)<interface(kk).planes
+                Subdomain(kk).nodes=[Subdomain(kk).nodes;cc];
+            end
+        elseif kk>1 && kk<NoDomains
+            if mesh.nodes(cc,coord)>interface(kk-1).planes && mesh.nodes(cc,coord)<interface(kk).planes
+                Subdomain(kk).nodes=[Subdomain(kk).nodes;cc];
+            end
+        elseif kk==NoDomains
+            if mesh.nodes(cc,coord)>interface(kk-1).planes && mesh.nodes(cc,coord)<=dmax
+                Subdomain(kk).nodes=[Subdomain(kk).nodes;cc];
+            end
+        end
+    end
+end
+
+for kk=1:NoDomains
+    if kk==1
+        Subdomain(kk).nodes=unique([Subdomain(kk).nodes; interface(kk).nodes]);
+        Subdomain(kk).interface_g{kk+1}=interface(kk).nodes;
+    elseif kk>1 && kk<NoDomains
+        Subdomain(kk).nodes=unique([Subdomain(kk).nodes;interface(kk-1).nodes;interface(kk).nodes]);
+        Subdomain(kk).interface_g{kk-1}=interface(kk-1).nodes;
+        Subdomain(kk).interface_g{kk+1}=interface(kk).nodes;
+    elseif kk==NoDomains
+        Subdomain(kk).nodes=unique([Subdomain(kk).nodes;interface(kk-1).nodes]);
+        Subdomain(kk).interface_g{kk-1}=interface(kk-1).nodes;
+    end
+end
+
+for kk=1:NoDomains
+    partmat(kk).nodes=Subdomain(kk).nodes;
+    partmat(kk).interface_g=Subdomain(kk).interface_g;
+end
+
+for i=1:NoDomains
+    for j=1:NoDomains
+        if j==(i-1) || j==(i+1)
+            continue
+        else 
+            partmat(i).interface_g{j}=[0];
+        end
+    end
+end
+
+
+for i=1:NoDomains
+    if i==1
+        partmat(i).inter_tot=interface_nodes(:,i);
+    elseif i==NoDomains
+        partmat(i).inter_tot=interface_nodes(:,(i-1));
+    elseif i>1 && i<NoDomains
+        partmat(i).inter_tot=unique([interface_nodes(:,(i-1));interface_nodes(:,i)]);
+    end
+end
+
+for i=1:NoDomains
+    NC_sub=length(partmat(i).nodes);
+    partmat(i).SD_nodes=[(1:NC_sub)' partmat(i).nodes];
+end
+
+
+for i=1:NoDomains
+    for j=1:NoDomains
+            ismem=ismember(partmat(i).nodes,partmat(i).interface_g{j});
+            partmat(i).int_local{j}=find(ismem);
+    end
+end
