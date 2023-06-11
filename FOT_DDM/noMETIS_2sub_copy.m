@@ -1,0 +1,230 @@
+%%% Testing the domain decomposition code with manual partitioning without the help of METIS
+%%% This code works on 2 subdomain partitioning and the interface is along x=0 plane
+tic
+mesh_spacing = 0.05;
+xmin = -1; xmax =1; ymin = -1; ymax = 1; zmin = 0; zmax = 2;
+[X,Y,Z] = meshgrid((xmin:mesh_spacing:xmax),(ymin:mesh_spacing:ymax),(zmin:mesh_spacing:zmax)); % generates an equispaced grid of nodes
+NodeCoord = [X(:),Y(:),Z(:)];     % x,y coordinates of the nodes
+DT =  delaunayTriangulation(NodeCoord);
+ElemConnMatrix = [DT(:,1),DT(:,2),DT(:,3),DT(:,4)];
+NC=length(NodeCoord);
+N=2;
+
+t=ElemConnMatrix(:,:);
+faces = zeros(4*size(t,1),3); % Forming all possible triangles from the elements 
+for ii=1:size(t)
+    faces(4*(ii-1)+1,:) = t(ii,[1,2,3]);
+    faces(4*(ii-1)+2,:) = t(ii,[1,2,4]);
+    faces(4*(ii-1)+3,:) = t(ii,[1,3,4]);
+    faces(4*(ii-1)+4,:) = t(ii,[2,3,4]);
+end
+
+elem_no=zeros(length(ElemConnMatrix(:,1)),4);
+for i=1:length(ElemConnMatrix(:,1))
+    elem_no(i,:)=[i i i i];
+end
+elem=reshape((elem_no)',(4*384000),1);
+
+tol_chk=10^-9;
+
+% nodes_x0=find(abs(NodeCoord(:,1)-0.05)<=tol_chk & abs(NodeCoord(:,1)-0.05)>=0);
+
+nodes_x0=find(NodeCoord(:,1)==0); %Nodes lying on x=0 plane
+ind=ismember(faces,nodes_x0); 
+% Considering only those triangles from the complete list of triangles
+% which have all three nodes lying on x=0 plane
+tri_x0_ind= find((ind(:,1)==1 & ind(:,2)==1 & ind(:,3)==1)==1); 
+tri_x0=faces(tri_x0_ind,:);
+elem_x0=elem(tri_x0_ind,:);
+
+
+n1=[0];
+n2=[0];
+for i=1:NC
+    if NodeCoord(i,1)>=-1 & NodeCoord(i,1)<0
+        n1=[n1;i];
+    elseif NodeCoord(i,1)>0 & NodeCoord(i,1)<=1
+        n2=[n2;i];
+    end
+end
+
+n1=unique([n1;nodes_x0]);
+n2=unique([n2;nodes_x0]);
+
+n1(1,:)=[];
+n2(1,:)=[];
+
+partmat(1).nodes=n1;
+partmat(2).nodes=n2;
+
+for i=1:N
+    for j=1:N
+        if j==i
+            partmat(i).interface_g{j}=[];
+        else
+            partmat(i).interface_g{j}=nodes_x0;
+        end
+    end
+end
+
+
+% partmat(1).interface_g(2)=nodes_x0;
+% partmat(2).interface_g{1}=nodes_x0;
+
+
+for i=1:N
+    NC_sub=length(partmat(i).nodes);
+    partmat(i).SD_nodes=[(1:NC_sub)' partmat(i).nodes];
+end
+
+for i=1:N
+    for j=1:N
+        if j==i
+            continue
+        else
+            ismem=ismember(partmat(i).nodes,partmat(i).interface_g{j});
+            partmat(i).int_local{j}=find(ismem);
+        end
+    end
+end
+
+ partmat=ECM_3D(partmat,ElemConnMatrix,N);
+ 
+%  [e,e_n]=boundedges_element_3D(NodeCoord,ElemConnMatrix);
+%  ind1=ismember(e,partmat(1).nodes);
+%  ind_n1=find(ind1(:,1)==1 & ind1(:,2)==1 & ind1(:,3)==1);
+%  partmat(1).boundtri=e(ind_n1,:);
+%  partmat(1).belem=e_n(ind_n1,:);
+%  
+%  ind2=ismember(e,partmat(2).nodes);
+%  ind_n2=find(ind2(:,1)==1 & ind2(:,2)==1 & ind2(:,3)==1);
+%  partmat(2).boundtri=e(ind_n2,:);
+%  partmat(2).belem=e_n(ind_n2,:);
+ 
+partmat=boundtri_bdelem_3D(partmat,N);
+tt1=ismember(partmat(1).boundtri,nodes_x0);
+tt2=find(tt1(:,1)==1 & tt1(:,2)==1 & tt1(:,3)==1);
+
+partmat(1).art_bound=partmat(1).boundtri(tt2,:);
+partmat(1).artb_elem=partmat(1).belem(tt2,:);
+
+partmat(1).boundtri(tt2,:)=[];
+partmat(1).belem(tt2,:)=[];
+
+tt3=ismember(partmat(2).boundtri,nodes_x0);
+tt4=find(tt3(:,1)==1 & tt3(:,2)==1 & tt3(:,3)==1);
+
+partmat(2).art_bound=partmat(2).boundtri(tt4,:);
+partmat(2).artb_elem=partmat(2).belem(tt4,:);
+
+partmat(2).boundtri(tt4,:)=[];
+partmat(2).belem(tt4,:)=[];
+
+%  partmat(1).art_bound=tri_x0;
+%  partmat(2).art_bound=tri_x0;
+%  
+%  partmat(1).artb_elem=elem_x0;
+%  partmat(2).artb_elem=elem_x0;
+ 
+  partmat=assemble_3D(DT,partmat,NodeCoord,N);
+  
+   beta=1/(mesh_spacing^2);
+ alpha=1/(mesh_spacing);
+ 
+ partmat=interface_calc_3D(partmat,NodeCoord,N);
+ 
+ for i=1:N
+        node_len=length(partmat(i).nodes);
+        LHS_extra=sparse(node_len,node_len);
+        for j=1:N
+            if j==i
+                continue
+            else
+                LHS_extra=LHS_extra+partmat(i).RHS_extra{j};
+            end
+        end
+        partmat(i).LHS=(alpha)*LHS_extra;
+        partmat(i).Gsub=partmat(i).Gsub+partmat(i).LHS;
+ end
+
+ tol = 1e-6;
+maxit = 1000;
+
+g_ini=cell(N,N); % Initial assumption for interface nodes
+
+for i=1:N
+    len_sub=length(partmat(i).nodes);
+    for j=1:N
+        if j==i
+            continue
+        else
+            len=length(partmat(i).int_local{j});
+            g_int=zeros(len,1);
+            g_ini{i,j}=g_int;
+            partmat(i).robin{j}=zeros(len_sub,1);
+        end
+    end
+    
+    partmat(i).uprev=zeros(len_sub,1);
+    partmat(i).tol=1;
+end
+
+max_tol=1;
+% max_tol=max([partmat(:).tol]);
+
+iter=0;
+% while iter>0
+ while max_tol>0.01 || iter<=2
+    for i=1:N
+        len_node=length(partmat(i).nodes);
+        RHS_extra=zeros(len_node,1);
+        for j=1:N
+            if j==i
+                continue
+            else
+               int_node=partmat(i).int_local{j};
+               partmat(i).robin{j}(int_node)=g_ini{i,j};
+            
+               RHS_extra=RHS_extra+(partmat(i).RHS_extra{j}*partmat(i).robin{j});
+            end
+        end
+        partmat(i).RHS_final=partmat(i).source+RHS_extra;
+        partmat(i).soln=gmres(partmat(i).Gsub,partmat(i).RHS_final,[],tol,maxit);
+%     partmat(i).soln=partmat(i).Gsub\partmat(i).RHS_final;
+        partmat(i).tol=abs(partmat(i).soln-partmat(i).uprev)./abs(partmat(i).soln);
+    end
+    
+   
+    u_int=cell(N,N);
+    for i=1:N
+        for j=1:N
+            if j==i
+                continue
+            else
+                len_int=partmat(i).int_local{j};
+                u_int{i,j}=partmat(i).soln(len_int);
+            end
+        end
+    end
+    
+    g_next=cell(N,N);
+    for i=1:N
+        for j=1:N
+            if j==i
+                continue
+            else 
+                g_next{i,j}=2*alpha*u_int{j,i}-g_ini{j,i};
+            end
+        end
+        partmat(i).uprev(:,:)=partmat(i).soln(:,:);
+        partmat(i).maxtol=max(partmat(i).tol);
+    end
+    
+    g_ini(:,:)=g_next(:,:);
+  max_tol=max([partmat.maxtol]);
+    iter=iter+1;
+    disp(iter);
+%      iter=iter-1;
+ end
+ 
+ toc
