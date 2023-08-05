@@ -1,13 +1,13 @@
 
-%%% This function gives the ElemConnMatrix for each subdomain.
+%%% This function gives the Element Connectivity Matrix for each subdomain.
 
 %%%% Inputs:
-% partmat: Struct containing nodes info of each subdomain. It's a struct for the subdomains and their different parameters
-% EkemConnMatrix: The global ElemConnMatrix for the entire domain
+% partmat: Structure containing nodes info and other parameters for each subdomain. 
+% ElemConnMatrix: The global ElemConnMatrix for the entire domain
 % N: number of subdomains
 
 %%%% Output:
-% partmat: Struct with an added field for ECM of each subdomain
+% partmat: Struct with an added field for ElemConnMatrix for each subdomain
 
 function partmat=ECM_3D(partmat,ElemConnMatrix,N)
 for i=1:N
