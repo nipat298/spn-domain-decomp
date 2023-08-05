@@ -1,0 +1,157 @@
+function [Ks,Km,Kb,I,J]=assemble_ddm(mesh,partmat,sub_id)
+% This function gives the stiffness, mass and boundary matrix for each subdomain.
+% The boundary matrix formed here is only for the original boundary and not the artifical interface between subdomains
+
+%%%%%%% Inputs %%%%%%%%%
+% mesh: structure variable containing meshing information
+% partmat: structure type variable containing subdomain info
+% sub_id: Subdomain numbering
+
+%%%%%% Return variables %%%%%%
+% Ks: stiffness matrix
+% Km: mass matrix
+% Kb: boundary matrix (only for original boundary of a subdomain; not for artificial interfaces)
+% I,J: variables for vectorized FEM implementation
+
+Nelem=length(partmat(sub_id).ECM);
+   
+%% Generation of elemental FEM matrices
+
+    a1=zeros(1,1,Nelem);
+    a2=zeros(1,1,Nelem);
+    a3=zeros(1,1,Nelem);
+    a4=zeros(1,1,Nelem);
+    
+    b1=zeros(1,1,Nelem);
+    b2=zeros(1,1,Nelem);
+    b3=zeros(1,1,Nelem);
+    b4=zeros(1,1,Nelem);
+    
+    c1=zeros(1,1,Nelem);
+    c2=zeros(1,1,Nelem);
+    c3=zeros(1,1,Nelem);
+    c4=zeros(1,1,Nelem);
+    
+    d1=zeros(1,1,Nelem);
+    d2=zeros(1,1,Nelem);
+    d3=zeros(1,1,Nelem);
+    d4=zeros(1,1,Nelem);
+    
+    part1=zeros(1,1,Nelem);
+    part2=zeros(1,1,Nelem);
+    part3=zeros(1,1,Nelem);
+    elem_vol=zeros(1,1,Nelem);
+
+
+x1=mesh.nodes(partmat(sub_id).ECM(:,1),1);
+x2=mesh.nodes(partmat(sub_id).ECM(:,2),1);
+x3=mesh.nodes(partmat(sub_id).ECM(:,3),1);
+x4=mesh.nodes(partmat(sub_id).ECM(:,4),1);
+
+
+y1=mesh.nodes(partmat(sub_id).ECM(:,1),2);
+y2=mesh.nodes(partmat(sub_id).ECM(:,2),2);
+y3=mesh.nodes(partmat(sub_id).ECM(:,3),2);
+y4=mesh.nodes(partmat(sub_id).ECM(:,4),2);
+
+z1=mesh.nodes(partmat(sub_id).ECM(:,1),3);
+z2=mesh.nodes(partmat(sub_id).ECM(:,2),3);
+z3=mesh.nodes(partmat(sub_id).ECM(:,3),3);
+z4=mesh.nodes(partmat(sub_id).ECM(:,4),3);
+
+a1(1,1,:) = x2.*(y3.*z4 - y4.*z3) + x3.*(y4.*z2 - y2.*z4) + x4.*(y2.*z3 - y3.*z2);
+a2(1,1,:) = x1.*(y4.*z3 - y3.*z4) + x3.*(y1.*z4 - y4.*z1) + x4.*(y3.*z1 - y1.*z3);
+a3(1,1,:) = x1.*(y2.*z4 - y4.*z2) + x2.*(y4.*z1 - y1.*z4) + x4.*(y1.*z2 - y2.*z1);
+a4(1,1,:) = x1.*(y3.*z2 - y2.*z3) + x2.*(y1.*z3 - y3.*z1) + x3.*(y2.*z1 - y1.*z2);
+
+b1(1,1,:) = y2.*(z4-z3) + y3.*(z2-z4) + y4.*(z3-z2);
+b2(1,1,:) = y1.*(z3-z4) + y3.*(z4-z1) + y4.*(z1-z3);
+b3(1,1,:) = y1.*(z4-z2) + y2.*(z1-z4) + y4.*(z2-z1);
+b4(1,1,:) = y1.*(z2-z3) + y2.*(z3-z1) + y3.*(z1-z2);
+
+c1(1,1,:) = z2.*(x4-x3) + z3.*(x2-x4) + z4.*(x3-x2);
+c2(1,1,:) = z1.*(x3-x4) + z3.*(x4-x1) + z4.*(x1-x3);
+c3(1,1,:) = z1.*(x4-x2) + z2.*(x1-x4) + z4.*(x2-x1);
+c4(1,1,:) = z1.*(x2-x3) + z2.*(x3-x1) + z3.*(x1-x2);
+
+d1(1,1,:) = x2.*(y4-y3) + x3.*(y2-y4) + x4.*(y3-y2);
+d2(1,1,:) = x1.*(y3-y4) + x3.*(y4-y1) + x4.*(y1-y3);
+d3(1,1,:) = x1.*(y4-y2) + x2.*(y1-y4) + x4.*(y2-y1);
+d4(1,1,:) = x1.*(y2-y3) + x2.*(y3-y1) + x3.*(y1-y2);
+
+%%% Determinant of Jacobian
+
+part1(1,1,:)=(x2-x1).*((y3-y1).*(z4-z1)-(z3-z1).*(y4-y1));
+part2(1,1,:)=(x3-x1).*((y4-y1).*(z2-z1)-(y2-y1).*(z4-z1));
+part3(1,1,:)=(x4-x1).*((y2-y1).*(z3-z1)-(y3-y1).*(z2-z1));
+elem_vol(1,1,:)=(1/6)*(part1+part2+part3);
+
+
+%%% Stiffness matrix
+Ks=zeros(4,4,Nelem);
+
+Ks(1,1,:)=((b1(1,1,:).^2)+(c1(1,1,:).^2)+(d1(1,1,:).^2))./(36*elem_vol);
+Ks(1,2,:)=((b1(1,1,:).*b2(1,1,:))+(c1(1,1,:).*c2(1,1,:))+(d1(1,1,:).*d2(1,1,:)))./(36*elem_vol);
+Ks(1,3,:)=((b1(1,1,:).*b3(1,1,:))+(c1(1,1,:).*c3(1,1,:))+(d1(1,1,:).*d3(1,1,:)))./(36*elem_vol);
+Ks(1,4,:)=((b1(1,1,:).*b4(1,1,:))+(c1(1,1,:).*c4(1,1,:))+(d1(1,1,:).*d4(1,1,:)))./(36*elem_vol);
+
+Ks(2,1,:)=Ks(1,2,:);
+Ks(2,2,:)=((b2(1,1,:).^2)+(c2(1,1,:).^2)+(d2(1,1,:).^2))./(36*elem_vol);
+Ks(2,3,:)=((b2(1,1,:).*b3(1,1,:))+(c2(1,1,:).*c3(1,1,:))+(d2(1,1,:).*d3(1,1,:)))./(36*elem_vol);
+Ks(2,4,:)=((b2(1,1,:).*b4(1,1,:))+(c2(1,1,:).*c4(1,1,:))+(d2(1,1,:).*d4(1,1,:)))./(36*elem_vol);
+
+Ks(3,1,:)=Ks(1,3,:);
+Ks(3,2,:)=Ks(2,3,:);
+Ks(3,3,:)=((b3(1,1,:).^2)+(c3(1,1,:).^2)+(d3(1,1,:).^2))./(36*elem_vol);
+Ks(3,4,:)=((b3(1,1,:).*b4(1,1,:))+(c3(1,1,:).*c4(1,1,:))+(d3(1,1,:).*d4(1,1,:)))./(36*elem_vol);
+
+Ks(4,1,:)=Ks(1,4,:);
+Ks(4,2,:)=Ks(2,4,:);
+Ks(4,3,:)=Ks(3,4,:);
+Ks(4,4,:)=((b4(1,1,:).^2)+(c4(1,1,:).^2)+(d4(1,1,:).^2))./(36*elem_vol);
+
+
+%%% Mass matrix
+Km=zeros(4,4,Nelem);
+Km=[elem_vol/10, elem_vol/20, elem_vol/20, elem_vol/20
+    elem_vol/20, elem_vol/10, elem_vol/20, elem_vol/20
+    elem_vol/20, elem_vol/20, elem_vol/10, elem_vol/20
+    elem_vol/20, elem_vol/20, elem_vol/20, elem_vol/10];
+
+
+%%% Boundary matrix
+tri_area=zeros(1,1,Nelem); 
+% In the following eqn, we calculate the area of each boundary triangle and assign it to the element corresponding to it
+    
+bound_tri.a=sqrt((mesh.nodes(partmat(sub_id).boundtri(:,1),1)-mesh.nodes(partmat(sub_id).boundtri(:,2),1)).^2+(mesh.nodes(partmat(sub_id).boundtri(:,1),2)-mesh.nodes(partmat(sub_id).boundtri(:,2),2)).^2+(mesh.nodes(partmat(sub_id).boundtri(:,1),3)-mesh.nodes(partmat(sub_id).boundtri(:,2),3)).^2);
+bound_tri.b=sqrt((mesh.nodes(partmat(sub_id).boundtri(:,2),1)-mesh.nodes(partmat(sub_id).boundtri(:,3),1)).^2+(mesh.nodes(partmat(sub_id).boundtri(:,2),2)-mesh.nodes(partmat(sub_id).boundtri(:,3),2)).^2+(mesh.nodes(partmat(sub_id).boundtri(:,2),3)-mesh.nodes(partmat(sub_id).boundtri(:,3),3)).^2);
+bound_tri.c=sqrt((mesh.nodes(partmat(sub_id).boundtri(:,1),1)-mesh.nodes(partmat(sub_id).boundtri(:,3),1)).^2+(mesh.nodes(partmat(sub_id).boundtri(:,1),2)-mesh.nodes(partmat(sub_id).boundtri(:,3),2)).^2+(mesh.nodes(partmat(sub_id).boundtri(:,1),3)-mesh.nodes(partmat(sub_id).boundtri(:,3),3)).^2);
+bound_tri.s=(bound_tri.a+bound_tri.b+bound_tri.c)/2;
+
+tri_area(1,1,partmat(sub_id).belem(:,1))=sqrt((bound_tri.s).*(bound_tri.s-bound_tri.a).*(bound_tri.s-bound_tri.b).*(bound_tri.s-bound_tri.c));
+
+f_123=[1/6 1/12 1/12 0; 1/12 1/6 1/12 0; 1/12 1/12 1/6 0; 0 0 0 0];
+f_124=[1/6 1/12 0 1/12; 1/12 1/6 0 1/12; 0 0 0 0; 1/12 1/12 0 1/6];
+f_134=[1/6 0 1/12 1/12; 0 0 0 0; 1/12 0 1/6 1/12; 1/12 0 1/12 1/6];
+f_234=[0 0 0 0; 0 1/6 1/12 1/12; 0 1/12 1/6 1/12; 0 1/12 1/12 1/6];
+
+
+Kb=zeros(4,4,Nelem);
+
+i1=find(partmat(sub_id).belem(:,2)==1);
+Kb(:,:,partmat(sub_id).belem(i1,1))=repmat(f_123,[1 1 size(i1,1)]).*repmat(tri_area(partmat(sub_id).belem(i1,1)),[4,4]);
+i1=find(partmat(sub_id).belem(:,2)==2);
+Kb(:,:,partmat(sub_id).belem(i1,1))=repmat(f_234,[1 1 size(i1,1)]).*repmat(tri_area(partmat(sub_id).belem(i1,1)),[4,4]);
+i1=find(partmat(sub_id).belem(:,2)==3);
+Kb(:,:,partmat(sub_id).belem(i1,1))=repmat(f_124,[1 1 size(i1,1)]).*repmat(tri_area(partmat(sub_id).belem(i1,1)),[4,4]);
+i1=find(partmat(sub_id).belem(:,2)==4);
+Kb(:,:,partmat(sub_id).belem(i1,1))=repmat(f_134,[1 1 size(i1,1)]).*repmat(tri_area(partmat(sub_id).belem(i1,1)),[4,4]);
+
+
+
+Ti = reshape((partmat(sub_id).ECM(:,1:4))',[4,1,Nelem]);
+Tj = reshape((partmat(sub_id).ECM(:,1:4))',[1,4,Nelem]);
+I = repmat(Ti,1,4);
+J = repmat(Tj,4,1);
+
+end
